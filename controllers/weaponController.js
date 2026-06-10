@@ -1,4 +1,6 @@
 const { Weapon } = require('../models');
+const fs = require('fs');
+const path = require('path');
 
 exports.getAllWeapons = async (req, res) => {
   const weapons = await Weapon.findAll();
@@ -26,6 +28,12 @@ exports.updateWeapon = async (req, res) => {
   try {
     const weapon = await Weapon.findByPk(req.params.id);
     if (!weapon) return res.status(404).json({ message: 'Weapon not found' });
+    if (req.file && weapon.image && !weapon.image.startsWith('http')) {
+      const oldImagePath = path.join(__dirname, '../uploads', weapon.image);
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
     const image = req.file ? req.file.filename : weapon.image;
     await weapon.update({ ...req.body, image });
     res.json(weapon);
@@ -37,6 +45,12 @@ exports.updateWeapon = async (req, res) => {
 exports.deleteWeapon = async (req, res) => {
   const weapon = await Weapon.findByPk(req.params.id);
   if (!weapon) return res.status(404).json({ message: 'Weapon not found' });
+  if (weapon.image && !weapon.image.startsWith('http')) {
+      const oldImagePath = path.join(__dirname, '../uploads', weapon.image);
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
   await weapon.destroy();
   res.json({ message: 'Weapon deleted' });
 };
